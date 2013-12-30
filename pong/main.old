@@ -1,0 +1,144 @@
+#include <iostream>
+
+#include "SDL2/SDL.h"
+#include "SDL2/sdl_image.h"
+
+using namespace std;
+
+const int SCREEN_HEIGHT = 480;
+const int SCREEN_WIDTH = 640;
+
+const int SPRITE_DIM = 16;
+
+void logSDLError(ostream &os, const string msg)
+{
+	os << msg << " error: " << SDL_GetError() << endl;
+}
+
+SDL_Texture* loadTexture (const string &file, SDL_Renderer *ren)
+{
+	SDL_Texture *texture = IMG_LoadTexture(ren, file.c_str());
+
+	// make sure converting went fine
+	if (texture == nullptr)
+	{
+		logSDLError(cout, "loadTexture");
+	}
+
+	return texture;
+}
+
+void renderTexture (SDL_Texture *tex, SDL_Renderer *ren, SDL_Rect dst, SDL_Rect *clip = nullptr)
+{
+	SDL_RenderCopy(ren, tex, clip, &dst);
+}
+
+void renderTexture (SDL_Texture *tex, SDL_Renderer *ren, int x, int y, SDL_Rect *clip = nullptr)
+{
+	SDL_Rect dst;
+	dst.x = x;
+	dst.y = y;
+
+	if (clip != nullptr)
+	{
+		dst.w = clip->w;
+		dst.h = clip->h;
+	}
+	else
+	{
+		SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
+	}
+
+	renderTexture(tex, ren, dst, clip);
+}
+
+int main(int argc, char* args[])
+{
+
+	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	{
+		logSDLError(cout, "SDL_Init");
+		return 1;
+	}
+
+	if ((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG)
+	{
+		logSDLError(cout, "IMG_INIT");
+		return 1;
+	}
+
+	SDL_Window *win = SDL_CreateWindow("Hello world!", 100, 100, 
+			SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	if (win == NULL)
+	{
+		logSDLError(cout, "SDL_CreateWindow");
+		return 1;
+	}
+
+	SDL_Renderer *renderer = SDL_CreateRenderer(win, -1, 
+			SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	if (renderer == nullptr)
+	{
+		logSDLError(cout, "SDL_CreateRenderer");
+		return 1;
+	}
+
+	SDL_Surface *screen = SDL_GetWindowSurface(win);
+
+	SDL_Texture *happy = loadTexture("../../assets/happy.png", renderer);
+	if (happy == nullptr)
+	{
+		return 4;
+	}
+
+	SDL_RenderClear(renderer);
+
+	int x_p = 50;
+	int y_p = 50;
+
+	SDL_Event e;
+	bool quit = false;
+	while (!quit)
+	{
+		while (SDL_PollEvent (&e))
+		{
+			if (e.type == SDL_QUIT)
+			{
+				quit = true;
+			}
+			if (e.type == SDL_KEYDOWN)
+			{
+				switch(e.key.keysym.sym)
+				{
+					case SDLK_w:
+					case SDLK_UP:
+						y_p -= 16;
+						break;
+					case SDLK_s:
+					case SDLK_DOWN:
+						y_p += 16;
+						break;
+					case SDLK_a:
+					case SDLK_LEFT:
+						x_p -= 16;
+						break;
+					case SDLK_d:
+					case SDLK_RIGHT:
+						x_p += 16;
+						break;
+					case SDLK_ESCAPE:
+						quit = true;
+						break;
+				}
+			}
+		}
+
+		SDL_RenderClear (renderer);
+		renderTexture (happy, renderer, x_p, y_p);
+		SDL_RenderPresent (renderer);
+	}
+	SDL_DestroyTexture(happy);
+	SDL_FreeSurface(screen);
+	SDL_DestroyWindow(win);
+	SDL_Quit();
+}
