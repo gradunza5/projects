@@ -15,3 +15,5 @@
 # tutorials folder
 tutorials/
 
+# swap files
+*.swp
