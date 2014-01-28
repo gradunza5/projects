@@ -1,0 +1,14 @@
+dare has:
+	timeout
+	target
+	points?
+	
+response is:
+	yes
+		target is then required to provide proof of dare
+	no / timeout
+		dice is returned to darer
+
+proof is:
+	picture or video
+
